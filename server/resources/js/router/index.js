@@ -28,6 +28,46 @@ const routes = [
                 name: 'roles',
                 component: () => import('@/pages/Roles.vue'),
             },
+            {
+                path: 'stations',
+                name: 'stations',
+                component: () => import('@/pages/Stations.vue'),
+            },
+            {
+                path: 'lines',
+                name: 'lines',
+                component: () => import('@/pages/Lines.vue'),
+            },
+            {
+                path: 'nodes',
+                name: 'nodes',
+                component: () => import('@/pages/Nodes.vue'),
+            },
+            {
+                path: 'turnouts',
+                name: 'turnouts',
+                component: () => import('@/pages/Turnouts.vue'),
+            },
+            {
+                path: 'turnout-events',
+                name: 'turnout-events',
+                component: () => import('@/pages/TurnoutEvents.vue'),
+            },
+            {
+                path: 'turnout-alarms',
+                name: 'turnout-alarms',
+                component: () => import('@/pages/TurnoutAlarms.vue'),
+            },
+            {
+                path: 'device-health-logs',
+                name: 'device-health-logs',
+                component: () => import('@/pages/DeviceHealthLogs.vue'),
+            },
+            {
+                path: 'audit-logs',
+                name: 'audit-logs',
+                component: () => import('@/pages/AuditLogs.vue'),
+            },
         ],
     },
     {

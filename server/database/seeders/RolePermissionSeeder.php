@@ -22,16 +22,21 @@ class RolePermissionSeeder extends Seeder
         // Master data (Phase 2)
         'turnouts.view', 'turnouts.manage',
         'stations.view', 'stations.manage',
+        'lines.view',    'lines.manage',
         'nodes.view',    'nodes.manage',
 
         // Runtime / historian (Phases 3-6)
         'alarms.view',
+        'device_health_logs.view',
         'replay.view',
         'exports.use',
 
         // Settings & notifications (Phases 7-8)
         'notifications.manage',
         'settings.manage',
+
+        // Audit trail (Phase 2)
+        'audit_logs.view',
     ];
 
     /**
@@ -45,16 +50,18 @@ class RolePermissionSeeder extends Seeder
             'permissions.view',
             'turnouts.view', 'turnouts.manage',
             'stations.view', 'stations.manage',
+            'lines.view',    'lines.manage',
             'nodes.view',    'nodes.manage',
-            'alarms.view', 'replay.view', 'exports.use',
+            'alarms.view', 'device_health_logs.view', 'replay.view', 'exports.use',
             'notifications.manage', 'settings.manage',
+            'audit_logs.view',
         ],
         'operator' => [
-            'turnouts.view', 'stations.view', 'nodes.view',
-            'alarms.view', 'replay.view', 'exports.use',
+            'turnouts.view', 'stations.view', 'lines.view', 'nodes.view',
+            'alarms.view', 'device_health_logs.view', 'replay.view', 'exports.use',
         ],
         'viewer' => [
-            'turnouts.view', 'stations.view', 'nodes.view', 'alarms.view',
+            'turnouts.view', 'stations.view', 'lines.view', 'nodes.view', 'alarms.view',
         ],
     ];
 

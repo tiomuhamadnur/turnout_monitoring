@@ -728,7 +728,7 @@ AI agents MUST update status after completion.
 ## Status
 
 ```text
-[ ] NOT STARTED
+[x] COMPLETED
 ```
 
 ## Scope
@@ -761,7 +761,7 @@ AI agents MUST update status after completion.
 ## Status
 
 ```text
-[ ] NOT STARTED
+[x] COMPLETED
 ```
 
 ## Scope
@@ -780,7 +780,7 @@ AI agents MUST update status after completion.
 ## Status
 
 ```text
-[ ] NOT STARTED
+[-] IN PROGRESS
 ```
 
 ## Scope
@@ -942,4 +942,3 @@ ASK USER.
 ---
 
 # END
-
