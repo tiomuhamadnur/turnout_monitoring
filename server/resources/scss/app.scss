@@ -1,0 +1,65 @@
+// MRT Turnout Monitoring - global stylesheet entrypoint.
+// All assets MUST be served locally per BLUEPRINT.md (no CDN).
+
+@use "variables" as v;
+
+@import "bootstrap/scss/bootstrap";
+// bootstrap-icons CSS is imported from app.js — Sass-importing its SCSS here
+// causes Vite to resolve the woff/woff2 url() paths relative to this file
+// instead of the original module, leading to 404s on the fonts.
+
+:root {
+    --app-sidebar-width: #{v.$sidebar-width};
+    --app-sidebar-width-collapsed: #{v.$sidebar-width-collapsed};
+    --app-header-height: #{v.$header-height};
+    --app-footer-height: #{v.$footer-height};
+    --app-accent: #{v.$primary};
+}
+
+html, body, #app {
+    height: 100%;
+    margin: 0;
+    font-family: v.$font-family-sans-serif;
+}
+
+[data-bs-theme="light"] body { background: v.$body-bg-light; color: v.$body-fg-light; }
+[data-bs-theme="dark"]  body { background: v.$body-bg-dark;  color: v.$body-fg-dark;  }
+
+.app-layout {
+    display: grid;
+    grid-template-columns: var(--app-sidebar-width) 1fr;
+    grid-template-rows: var(--app-header-height) 1fr var(--app-footer-height);
+    grid-template-areas:
+        "sidebar header"
+        "sidebar main"
+        "sidebar footer";
+    height: 100vh;
+
+    &.is-collapsed {
+        grid-template-columns: var(--app-sidebar-width-collapsed) 1fr;
+    }
+
+    > .app-sidebar { grid-area: sidebar; }
+    > .app-header  { grid-area: header; }
+    > .app-main    { grid-area: main; overflow: auto; padding: 1.25rem; }
+    > .app-footer  { grid-area: footer; }
+}
+
+@media (max-width: 768px) {
+    .app-layout {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "header"
+            "main"
+            "footer";
+
+        > .app-sidebar {
+            position: fixed; inset: 0 auto 0 0;
+            width: var(--app-sidebar-width);
+            transform: translateX(-100%);
+            transition: transform .2s ease;
+            z-index: 1040;
+        }
+        &.is-mobile-open > .app-sidebar { transform: translateX(0); }
+    }
+}

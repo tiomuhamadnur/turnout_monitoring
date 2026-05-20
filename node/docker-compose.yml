@@ -1,0 +1,6 @@
+# MRT Turnout Monitoring - Station Node Stack
+# Ubuntu Server + Python 3.12 + Docker Compose
+# Filled out in Phase 9 - Node Software
+version: "3.9"
+
+services: {}
