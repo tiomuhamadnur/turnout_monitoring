@@ -41,7 +41,7 @@ const masterItems = [
                 <li v-for="item in mainItems" :key="`main-${item.to}`">
                     <RouterLink :to="item.to"
                                 class="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-body"
-                                active-class="active bg-primary-subtle text-primary fw-medium">
+                                exact-active-class="active bg-primary-subtle text-primary fw-medium">
                         <i class="bi" :class="item.icon"></i>
                         <span v-if="!theme.sidebarCollapsed">{{ item.label }}</span>
                     </RouterLink>
@@ -52,7 +52,7 @@ const masterItems = [
                 <li v-for="item in masterItems.filter(item => auth.can(item.permission))" :key="`master-${item.to}`">
                     <RouterLink :to="item.to"
                                 class="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-body"
-                                active-class="active bg-primary-subtle text-primary fw-medium">
+                                exact-active-class="active bg-primary-subtle text-primary fw-medium">
                         <i class="bi" :class="item.icon"></i>
                         <span v-if="!theme.sidebarCollapsed">{{ item.label }}</span>
                     </RouterLink>

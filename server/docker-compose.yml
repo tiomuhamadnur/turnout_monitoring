@@ -1,0 +1,197 @@
+name: mrt-turnout-server
+
+x-app-common: &app-common
+  image: mrt-turnout-server-app:latest
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: app_runtime
+    args:
+      VITE_APP_NAME: ${VITE_APP_NAME:-MRT Turnout Monitoring}
+      VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-turnout}
+      VITE_REVERB_HOST: ${VITE_REVERB_HOST:-localhost}
+      VITE_REVERB_PORT: ${VITE_REVERB_PORT:-80}
+      VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-http}
+  env_file:
+    - .env
+  restart: unless-stopped
+  init: true
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    mosquitto:
+      condition: service_healthy
+  volumes:
+    - app_storage:/var/www/html/storage
+    - app_bootstrap_cache:/var/www/html/bootstrap/cache
+  logging:
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+services:
+  init:
+    <<: *app-common
+    command: ["sh", "/usr/local/bin/init-container.sh"]
+    restart: "no"
+
+  app:
+    <<: *app-common
+    command: ["php-fpm", "-F"]
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "php-fpm", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  queue-worker:
+    <<: *app-common
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  reverb:
+    <<: *app-common
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  mqtt-subscriber:
+    <<: *app-common
+    command: ["php", "artisan", "mqtt:subscribe"]
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  nginx:
+    image: mrt-turnout-server-nginx:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx_runtime
+    restart: unless-stopped
+    init: true
+    depends_on:
+      app:
+        condition: service_started
+      reverb:
+        condition: service_started
+    ports:
+      - "${APP_HTTP_PORT:-80}:80"
+    volumes:
+      - app_storage:/var/www/html/storage:ro
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/nginx-health >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: ${APP_TIMEZONE:-Asia/Jakarta}
+    ports:
+      - "${DB_EXPOSE_PORT:-3306}:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=caching_sha2_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    init: true
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    command:
+      - sh
+      - -lc
+      - |
+        if [ -n "$$REDIS_PASSWORD" ]; then
+          exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD";
+        fi
+        exec redis-server --appendonly yes;
+    ports:
+      - "${REDIS_EXPOSE_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping; else redis-cli ping; fi"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    init: true
+    environment:
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    entrypoint: ["/bin/sh", "/mosquitto/config/entrypoint.sh"]
+    ports:
+      - "${MQTT_EXPOSE_PORT:-1883}:1883"
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./docker/mosquitto/entrypoint.sh:/mosquitto/config/entrypoint.sh:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h 127.0.0.1 -p 1883 -u \"$$MQTT_USERNAME\" -P \"$$MQTT_PASSWORD\" -t '$$SYS/broker/version' -C 1 >/dev/null 2>&1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  app_storage:
+    name: mrt_turnout_app_storage
+  app_bootstrap_cache:
+    name: mrt_turnout_app_bootstrap_cache
+  mysql_data:
+    name: mrt_turnout_mysql_data
+  redis_data:
+    name: mrt_turnout_redis_data
+  mosquitto_data:
+    name: mrt_turnout_mosquitto_data
+  mosquitto_log:
+    name: mrt_turnout_mosquitto_log

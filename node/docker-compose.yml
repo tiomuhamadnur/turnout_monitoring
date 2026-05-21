@@ -1,8 +1,10 @@
-# MRT Turnout Monitoring — Station Node Stack
+name: mrt-turnout-node
+
+# MRT Turnout Monitoring - Station Node Stack
 #
 # One node container per physical station rack. The broker lives on the
 # depot server (configured via MQTT_HOST in .env), so this compose file
-# does NOT run a local mosquitto — see ../server/docker-compose.yml for
+# does NOT run a local mosquitto - see ../server/docker-compose.yml for
 # that.
 #
 # Volumes:
@@ -18,12 +20,23 @@ services:
     image: mrt-turnout-node:latest
     container_name: mrt-turnout-node
     restart: unless-stopped
+    init: true
     env_file: .env
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
     volumes:
       - node_storage:/app/storage
       - node_logs:/app/logs
-    # The node only TALKS to the broker — no inbound ports required.
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "5"
+    # The node only TALKS to the broker - no inbound ports required.
 
 volumes:
   node_storage:
+    name: mrt_turnout_node_storage
   node_logs:
+    name: mrt_turnout_node_logs
