@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "PowerShell($tools = @\\(\"php\",\"composer\",\"node\",\"npm\",\"mysql\"\\); foreach \\($t in $tools\\) { $c = Get-Command $t -ErrorAction SilentlyContinue; if \\($c\\) { $ver = & $t --version 2>&1 | Select-Object -First 1; \"$t -> $\\($c.Source\\) :: $ver\" } else { \"$t -> NOT FOUND\" } })",
-      "PowerShell($backupDir = \".\\\\_blueprint_backup\"; if \\(Test-Path $backupDir\\) { Remove-Item $backupDir -Recurse -Force }; New-Item -ItemType Directory -Path $backupDir | Out-Null; Copy-Item \".\\\\server\\\\.env\" \"$backupDir\\\\server.env.blueprint\" -Force; Copy-Item \".\\\\server\\\\README.md\" \"$backupDir\\\\server.README.md\" -Force; Copy-Item \".\\\\server\\\\Dockerfile\" \"$backupDir\\\\server.Dockerfile\" -Force; Copy-Item \".\\\\server\\\\docker-compose.yml\" \"$backupDir\\\\server.docker-compose.yml\" -Force; Copy-Item \".\\\\server\\\\docker\" \"$backupDir\\\\server.docker\" -Recurse -Force; Copy-Item \".\\\\server\\\\resources\\\\svg\" \"$backupDir\\\\server.resources.svg\" -Recurse -Force; Copy-Item \".\\\\server\\\\resources\\\\audio\" \"$backupDir\\\\server.resources.audio\" -Recurse -Force; Get-ChildItem $backupDir -Recurse | Select-Object -ExpandProperty FullName)"
-    ]
-  }
-}
