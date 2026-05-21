@@ -68,6 +68,16 @@ const routes = [
                 name: 'audit-logs',
                 component: () => import('@/pages/AuditLogs.vue'),
             },
+            {
+                path: 'replay',
+                name: 'replay',
+                component: () => import('@/pages/Replay.vue'),
+            },
+            {
+                path: 'settings',
+                name: 'settings',
+                component: () => import('@/pages/Settings.vue'),
+            },
         ],
     },
     {

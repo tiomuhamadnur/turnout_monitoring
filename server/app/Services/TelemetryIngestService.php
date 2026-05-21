@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Events\TurnoutAlarmCleared;
+use App\Events\TurnoutAlarmRaised;
+use App\Events\TurnoutStateUpdated;
 use App\Models\DeviceHealthLog;
 use App\Models\Node;
 use App\Models\Turnout;
@@ -16,7 +19,7 @@ class TelemetryIngestService
 {
     public function ingestState(array $payload): TurnoutState
     {
-        return DB::transaction(function () use ($payload) {
+        [$state, $previousState, $raisedAlarm, $clearedAlarm] = DB::transaction(function () use ($payload) {
             $turnout = Turnout::query()
                 ->when($payload['turnout_uuid'] ?? null, fn ($q, $uuid) => $q->where('uuid', $uuid))
                 ->when(!($payload['turnout_uuid'] ?? null), fn ($q) => $q->where('code', $payload['turnout_code']))
@@ -33,6 +36,7 @@ class TelemetryIngestService
 
             $sourceTimestamp = Carbon::parse($payload['timestamp']);
             $previous = TurnoutState::query()->where('turnout_id', $turnout->id)->first();
+            $previousState = $previous?->state;
 
             $state = TurnoutState::query()->updateOrCreate(
                 ['turnout_id' => $turnout->id],
@@ -51,19 +55,31 @@ class TelemetryIngestService
                 'node_id' => $node->id,
                 'event_type' => 'state',
                 'state' => $payload['state'],
-                'previous_state' => $previous?->state,
+                'previous_state' => $previousState,
                 'channel_a' => $payload['channel_a'],
                 'channel_b' => $payload['channel_b'],
-                'is_transition' => $previous?->state !== $payload['state'],
+                'is_transition' => $previousState !== $payload['state'],
                 'source_timestamp' => $sourceTimestamp,
                 'received_at' => now(),
                 'raw_payload' => $payload,
             ]);
 
-            $this->syncAlarmState($turnout->id, $node->id, $payload['state'], $sourceTimestamp, $payload);
+            [$raisedAlarm, $clearedAlarm] = $this->syncAlarmState($turnout->id, $node->id, $payload['state'], $sourceTimestamp, $payload);
 
-            return $state->fresh(['turnout', 'node']);
+            return [$state->fresh(['turnout.station', 'node']), $previousState, $raisedAlarm, $clearedAlarm];
         });
+
+        // Broadcasts happen AFTER the transaction commits so subscribers can
+        // safely refetch derived data and see the new rows.
+        broadcast(new TurnoutStateUpdated($state, $previousState));
+        if ($raisedAlarm) {
+            broadcast(new TurnoutAlarmRaised($raisedAlarm));
+        }
+        if ($clearedAlarm) {
+            broadcast(new TurnoutAlarmCleared($clearedAlarm));
+        }
+
+        return $state;
     }
 
     public function ingestHeartbeat(array $payload): Node
@@ -118,7 +134,10 @@ class TelemetryIngestService
         });
     }
 
-    private function syncAlarmState(int $turnoutId, int $nodeId, string $state, Carbon $sourceTimestamp, array $payload): void
+    /**
+     * @return array{0: ?TurnoutAlarm, 1: ?TurnoutAlarm} [raised, cleared]
+     */
+    private function syncAlarmState(int $turnoutId, int $nodeId, string $state, Carbon $sourceTimestamp, array $payload): array
     {
         $activeAlarm = TurnoutAlarm::query()
             ->where('turnout_id', $turnoutId)
@@ -127,7 +146,7 @@ class TelemetryIngestService
 
         if ($state === 'FAILURE') {
             if (!$activeAlarm) {
-                TurnoutAlarm::create([
+                $raised = TurnoutAlarm::create([
                     'turnout_id' => $turnoutId,
                     'node_id' => $nodeId,
                     'alarm_type' => 'failure',
@@ -136,8 +155,10 @@ class TelemetryIngestService
                     'started_at' => $sourceTimestamp,
                     'context' => $payload,
                 ]);
+
+                return [$raised, null];
             }
-            return;
+            return [null, null];
         }
 
         if ($activeAlarm) {
@@ -145,6 +166,10 @@ class TelemetryIngestService
                 'is_active' => false,
                 'ended_at' => $sourceTimestamp,
             ]);
+
+            return [null, $activeAlarm->fresh()];
         }
+
+        return [null, null];
     }
 }

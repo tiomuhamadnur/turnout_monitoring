@@ -1,0 +1,4 @@
+# Keep this directory in git (Docker volume mount point); ignore the
+# rotating log files that the running node writes here.
+*
+!.gitignore

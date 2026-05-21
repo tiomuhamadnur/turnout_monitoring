@@ -630,6 +630,10 @@ turnout/station/LBB/node/LBB-NODE-01/heartbeat
 }
 ```
 
+- `channel_a = true` indicates Normal position (N)
+- `channel_b = true` indicates Reverse position (R)
+- if both are false the turnout is not in a valid Normal/Reverse indication
+
 ---
 
 # DATABASE TABLES
@@ -780,7 +784,7 @@ AI agents MUST update status after completion.
 ## Status
 
 ```text
-[-] IN PROGRESS
+[x] COMPLETED
 ```
 
 ## Scope
@@ -799,7 +803,7 @@ AI agents MUST update status after completion.
 ## Status
 
 ```text
-[ ] NOT STARTED
+[x] COMPLETED
 ```
 
 ## Scope
@@ -811,6 +815,26 @@ AI agents MUST update status after completion.
 - Browser sound
 - Responsive dashboard
 
+## Deliverables
+
+- Laravel Reverb installed + broadcasting configured (`BROADCAST_CONNECTION=reverb`)
+- Private channels `turnouts.global` and `turnouts.station.{code}` (auth in `routes/channels.php`)
+- Broadcast events: `TurnoutStateUpdated`, `TurnoutAlarmRaised`, `TurnoutAlarmCleared` (ShouldBroadcastNow)
+- `TelemetryIngestService` fans out broadcasts after each state commit
+- `GET /api/dashboard/live` snapshot for initial hydration
+- Pinia `useRealtimeStore` keeps state fresh via Echo + Reverb
+- `TurnoutSvg.vue` animated component (green/amber/flashing red per blueprint)
+- Compact `StationLiveCard.vue` (one card per station, opens modal on click)
+- `StationLiveModal.vue` (per-station SVG grid, live-updating)
+- `AlarmToastStack.vue` floating popup with persistent fault indicator
+- `alarmSound.js` — `/audio/alarm.mp3` with Web Audio API beep fallback (no external CDN)
+
+## Run-time notes
+
+- Start the broker: `php artisan reverb:start`
+- Echo client config is via `VITE_REVERB_*` envs (mirror of `REVERB_*`)
+- Drop a custom `alarm.mp3` into `public/audio/` to override the beep
+
 ---
 
 # PHASE 5 — HISTORIAN
@@ -818,7 +842,7 @@ AI agents MUST update status after completion.
 ## Status
 
 ```text
-[ ] NOT STARTED
+[x] COMPLETED
 ```
 
 ## Scope
@@ -830,6 +854,15 @@ AI agents MUST update status after completion.
 - Filtering
 - Search
 
+## Deliverables
+
+- TurnoutEvent / TurnoutAlarm / DeviceHealthLog controllers now support
+  `station_id`, `from`/`to`, `search`, and per-entity scoping filters
+- `HistorianController` with `/state-duration`, `/communication`, `/alarm-summary`
+  endpoints (folds raw events into duration/uptime/count aggregates)
+- Shared `HistorianFilters.vue` strip with station / state / date / search
+- Resource payloads carry nested `station` info for cross-entity UI joins
+
 ---
 
 # PHASE 6 — REPLAY ENGINE
@@ -837,7 +870,7 @@ AI agents MUST update status after completion.
 ## Status
 
 ```text
-[ ] NOT STARTED
+[x] COMPLETED
 ```
 
 ## Scope
@@ -847,6 +880,14 @@ AI agents MUST update status after completion.
 - Replay UI
 - Speed control
 
+## Deliverables
+
+- `ReplayController` exposes `/api/replay/stations` and `/api/replay/timeline`
+  (with pre-window seed state, so playback starts from a known position)
+- `pages/Replay.vue` with scrubber, play/pause, step, speed select (1×…60×),
+  recent-event ribbon
+- Re-uses `TurnoutSvg.vue` for the grid — same component drives live & replay
+
 ---
 
 # PHASE 7 — EXPORT ENGINE
@@ -854,7 +895,7 @@ AI agents MUST update status after completion.
 ## Status
 
 ```text
-[ ] NOT STARTED
+[x] COMPLETED
 ```
 
 ## Scope
@@ -864,6 +905,16 @@ AI agents MUST update status after completion.
 - API endpoint
 - Flexible filtering
 
+## Deliverables
+
+- `composer require phpoffice/phpspreadsheet barryvdh/laravel-dompdf`
+- `ExportService` centralises filter-parity row queries + XLSX / PDF writers
+- 6 endpoints under `/api/exports/{turnout-events|turnout-alarms|device-health}.{xlsx|pdf}`
+- Blade templates in `resources/views/exports/` (dompdf-safe, inline CSS)
+- Shared `ExportButtons.vue` + `utils/download.js` (binary blob via axios)
+- Wired into TurnoutEvents / TurnoutAlarms / DeviceHealthLogs pages —
+  current filters apply to the export
+
 ---
 
 # PHASE 8 — NOTIFICATION ENGINE
@@ -871,7 +922,7 @@ AI agents MUST update status after completion.
 ## Status
 
 ```text
-[ ] NOT STARTED
+[x] COMPLETED
 ```
 
 ## Scope
@@ -881,6 +932,19 @@ AI agents MUST update status after completion.
 - WhatsApp integration
 - Notification testing
 
+## Deliverables
+
+- `notification_channels` + `notification_logs` tables
+- `NotificationDispatcher` fan-out with per-channel drivers:
+  - `WebhookDriver` (generic, configurable URL / headers / method)
+  - `EmailDriver` (uses Laravel Mail; works with any MAIL_MAILER)
+  - `WhatsappDriver` (provider-agnostic; defaults match WAHA / Cloud-API shapes)
+- `SendAlarmNotifications` listener subscribed via `AppServiceProvider`
+  (synchronous; drivers own their own timeouts)
+- `NotificationChannelController` — CRUD + `POST /test` per channel
+- `pages/Settings.vue` with full channel manager + per-type form + Test button
+- `notifications.view` / `notifications.manage` permissions seeded
+
 ---
 
 # PHASE 9 — NODE SOFTWARE
@@ -888,7 +952,7 @@ AI agents MUST update status after completion.
 ## Status
 
 ```text
-[ ] NOT STARTED
+[x] COMPLETED
 ```
 
 ## Scope
@@ -899,6 +963,36 @@ AI agents MUST update status after completion.
 - Heartbeat service
 - State machine
 - Failure detection
+
+## Deliverables
+
+- `node/` package (Python 3.12, paho-mqtt + psutil only — stdlib otherwise)
+- `app/config/settings.py` — env-driven dataclass, matches BLUEPRINT envs
+- `app/input/` — `InputReader` interface, `SimulatorInputReader` (dev),
+  `ModbusInputReader` stub (raises until operator wires their DI module)
+- `app/state_machine/turnout_state.py` — NORMAL/REVERSE/FAILURE classifier
+  with `FAILURE_DEBOUNCE_SECONDS` both-low timeout + `STATE_PUBLISH_INTERVAL`
+  keepalive re-publish
+- `app/mqtt/` — topic builders matching server `MqttSubscribeCommand` +
+  `MqttPublisher` with paho 2.x async loop & auto-reconnect
+- `app/historian/sqlite_cache.py` — rolling on-disk backup
+  (`SQLITE_RETAIN_EVENTS` cap, WAL mode, thread-safe)
+- `app/heartbeat/service.py` — daemon thread emitting heartbeat
+  (`HEARTBEAT_INTERVAL`) + device-health (`HEALTH_INTERVAL`, psutil-sourced)
+- `app/services/runner.py` + `app/main.py` — orchestrator with SIGINT/SIGTERM
+  handlers
+- `Dockerfile` (python:3.12-slim, non-root user, healthcheck) +
+  `docker-compose.yml` (named volumes, `restart: unless-stopped`) +
+  `.env.example`
+- `tests/` — 18 unittest cases (state machine debounce edges + topic shape)
+  with no broker / hardware dependency
+
+## Run-time notes
+
+- Dev: `INPUT_DRIVER=simulator python -m app.main` (no hardware needed)
+- Prod: `INPUT_DRIVER=modbus`, implement `ModbusInputReader.sample()` for
+  the specific DI module on site
+- Tests: `python -m unittest discover -s tests` (hermetic — no paho needed)
 
 ---
 

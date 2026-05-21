@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import auditLogsApi from '@/services/auditLogs';
+import { formatTimestamp } from '@/utils/date';
 
 const rows = ref([]);
 const loading = ref(false);
@@ -61,7 +62,7 @@ onMounted(() => fetchRows());
                     <table class="table table-sm align-middle">
                         <thead>
                             <tr>
-                                <th>Time</th>
+                                <th>Timestamps</th>
                                 <th>User</th>
                                 <th>Model</th>
                                 <th>Action</th>
@@ -73,7 +74,7 @@ onMounted(() => fetchRows());
                             <tr v-if="loading"><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>
                             <tr v-else-if="rows.length === 0"><td colspan="6" class="text-center text-muted py-4">No audit logs.</td></tr>
                             <tr v-else v-for="row in rows" :key="row.id">
-                                <td class="small">{{ row.created_at }}</td>
+                                <td class="small">{{ formatTimestamp(row.created_at) }}</td>
                                 <td>{{ row.user?.name || 'System' }}</td>
                                 <td>{{ row.auditable_type }}</td>
                                 <td><span class="badge text-bg-secondary text-capitalize">{{ row.action }}</span></td>

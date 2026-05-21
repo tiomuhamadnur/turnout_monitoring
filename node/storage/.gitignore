@@ -1,0 +1,4 @@
+# Keep this directory in git (it's a Docker volume mount point), but the
+# runtime SQLite historian + WAL files MUST NOT be committed.
+*
+!.gitignore

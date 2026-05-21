@@ -1,2 +1,4 @@
-# MRT Turnout Monitoring - Station Node dependencies
-# Filled out in Phase 9 - Node Software
+# MRT Turnout Monitoring - Station Node
+# Stays stdlib-first; only the two libraries below are strictly required.
+paho-mqtt==2.1.0
+psutil==6.1.0

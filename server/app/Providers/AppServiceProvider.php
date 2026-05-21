@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Listeners\SendAlarmNotifications;
 use App\Models\User;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,5 +23,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function (User $user) {
             return $user->is_super_admin ? true : null;
         });
+
+        // Phase 8: wire the alarm-broadcast events to the notification fan-out.
+        Event::subscribe(SendAlarmNotifications::class);
     }
 }

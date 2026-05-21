@@ -28,7 +28,7 @@ async function submit() {
             <div class="card-body p-4">
                 <div class="text-center mb-4">
                     <i class="bi bi-train-front-fill text-primary fs-1"></i>
-                    <h1 class="h4 mt-2 mb-1">MRT Turnout Monitoring</h1>
+                    <h1 class="h4 mt-2 mb-1">MRTJ Turnout Monitoring</h1>
                     <p class="text-muted small mb-0">Sign in to continue</p>
                 </div>
 
@@ -68,7 +68,7 @@ async function submit() {
                     <button class="btn btn-link btn-sm text-decoration-none"
                             @click="theme.toggleMode()">
                         <i :class="theme.mode === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars'"></i>
-                        Toggle theme
+                        Change Theme
                     </button>
                 </div>
             </div>

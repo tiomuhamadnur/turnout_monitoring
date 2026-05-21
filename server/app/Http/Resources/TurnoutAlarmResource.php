@@ -18,6 +18,11 @@ class TurnoutAlarmResource extends JsonResource
                 'id' => $this->turnout->id,
                 'code' => $this->turnout->code,
                 'name' => $this->turnout->name,
+                'station' => $this->turnout->relationLoaded('station') && $this->turnout->station ? [
+                    'id'   => $this->turnout->station->id,
+                    'code' => $this->turnout->station->code,
+                    'name' => $this->turnout->station->name,
+                ] : null,
             ]),
             'node' => $this->whenLoaded('node', fn () => [
                 'id' => $this->node->id,

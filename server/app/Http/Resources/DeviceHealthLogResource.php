@@ -15,6 +15,11 @@ class DeviceHealthLogResource extends JsonResource
                 'id' => $this->node->id,
                 'node_id' => $this->node->node_id,
                 'name' => $this->node->name,
+                'station' => $this->node->relationLoaded('station') && $this->node->station ? [
+                    'id'   => $this->node->station->id,
+                    'code' => $this->node->station->code,
+                    'name' => $this->node->station->name,
+                ] : null,
             ]),
             'cpu_usage' => $this->cpu_usage,
             'ram_usage' => $this->ram_usage,

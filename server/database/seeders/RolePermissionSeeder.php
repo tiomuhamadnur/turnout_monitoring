@@ -32,6 +32,7 @@ class RolePermissionSeeder extends Seeder
         'exports.use',
 
         // Settings & notifications (Phases 7-8)
+        'notifications.view',
         'notifications.manage',
         'settings.manage',
 
@@ -53,12 +54,13 @@ class RolePermissionSeeder extends Seeder
             'lines.view',    'lines.manage',
             'nodes.view',    'nodes.manage',
             'alarms.view', 'device_health_logs.view', 'replay.view', 'exports.use',
-            'notifications.manage', 'settings.manage',
+            'notifications.view', 'notifications.manage', 'settings.manage',
             'audit_logs.view',
         ],
         'operator' => [
             'turnouts.view', 'stations.view', 'lines.view', 'nodes.view',
             'alarms.view', 'device_health_logs.view', 'replay.view', 'exports.use',
+            'notifications.view',
         ],
         'viewer' => [
             'turnouts.view', 'stations.view', 'lines.view', 'nodes.view', 'alarms.view',

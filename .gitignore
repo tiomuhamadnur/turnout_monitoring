@@ -1,0 +1,46 @@
+# =============================================================================
+# Root-level ignores (project-wide).
+#
+# Per-subproject ignores live in:
+#   server/.gitignore     Laravel / Composer / npm
+#   node/.gitignore       Python / pip / venv
+# Don't duplicate those rules here.
+# =============================================================================
+
+# --- OS junk ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# --- Editor / IDE folders that might land at the repo root ---
+/.vscode/
+/.idea/
+/.fleet/
+/.zed/
+/.nova/
+/.cursor/
+/.aider*
+*.code-workspace
+
+# --- Local backups / swap files ---
+*.swp
+*.swo
+*~
+*.bak
+*.orig
+
+# --- Claude Code per-user state (shared settings.json is committed if needed) ---
+.claude/settings.local.json
+.claude/.credentials.json
+.claude/projects/
+.claude/cache/
+
+# --- Root-level logs / scratch ---
+*.log
+/tmp/
+/scratch/

@@ -1,6 +1,29 @@
-# MRT Turnout Monitoring - Station Node Stack
-# Ubuntu Server + Python 3.12 + Docker Compose
-# Filled out in Phase 9 - Node Software
-version: "3.9"
+# MRT Turnout Monitoring — Station Node Stack
+#
+# One node container per physical station rack. The broker lives on the
+# depot server (configured via MQTT_HOST in .env), so this compose file
+# does NOT run a local mosquitto — see ../server/docker-compose.yml for
+# that.
+#
+# Volumes:
+#   node_storage : holds the local SQLite historian
+#   node_logs    : holds Python log output
+#
+# Restart policy: unless-stopped, so a manual `docker compose down`
+# stays down but a host reboot brings the node back up automatically.
 
-services: {}
+services:
+  node:
+    build: .
+    image: mrt-turnout-node:latest
+    container_name: mrt-turnout-node
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - node_storage:/app/storage
+      - node_logs:/app/logs
+    # The node only TALKS to the broker — no inbound ports required.
+
+volumes:
+  node_storage:
+  node_logs:

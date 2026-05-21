@@ -104,13 +104,13 @@ class RuntimeDemoSeeder extends Seeder
             $base = $now->copy()->subHours(6)->addMinutes($index * 8);
 
             $timeline = [
-                ['minutes' => 0,   'state' => 'NORMAL',  'a' => true,  'b' => false],
-                ['minutes' => 26,  'state' => 'REVERSE', 'a' => false, 'b' => true],
-                ['minutes' => 58,  'state' => 'NORMAL',  'a' => true,  'b' => false],
-                ['minutes' => 112, 'state' => 'FAILURE', 'a' => false, 'b' => false],
-                ['minutes' => 146, 'state' => 'NORMAL',  'a' => true,  'b' => false],
-                ['minutes' => 198, 'state' => 'REVERSE', 'a' => false, 'b' => true],
-                ['minutes' => 236, 'state' => $index % 2 === 0 ? 'FAILURE' : 'NORMAL', 'a' => false, 'b' => $index % 2 === 0 ? false : true],
+                ['minutes' => 0,   'state' => 'NORMAL'],
+                ['minutes' => 22,  'state' => 'REVERSE'],
+                ['minutes' => 48,  'state' => 'NORMAL'],
+                ['minutes' => 86,  'state' => 'FAILURE'],
+                ['minutes' => 128, 'state' => 'NORMAL'],
+                ['minutes' => 182, 'state' => 'REVERSE'],
+                ['minutes' => 225, 'state' => $index % 3 === 0 ? 'FAILURE' : 'NORMAL'],
             ];
 
             $previousState = null;
@@ -118,6 +118,8 @@ class RuntimeDemoSeeder extends Seeder
 
             foreach ($timeline as $step) {
                 $timestamp = $base->copy()->addMinutes($step['minutes']);
+                $channelA = $step['state'] === 'NORMAL';
+                $channelB = $step['state'] === 'REVERSE';
 
                 TurnoutEvent::create([
                     'turnout_id' => $turnout->id,
@@ -125,8 +127,8 @@ class RuntimeDemoSeeder extends Seeder
                     'event_type' => 'state',
                     'state' => $step['state'],
                     'previous_state' => $previousState,
-                    'channel_a' => $step['a'],
-                    'channel_b' => $step['b'],
+                    'channel_a' => $channelA,
+                    'channel_b' => $channelB,
                     'is_transition' => $previousState !== $step['state'],
                     'source_timestamp' => $timestamp,
                     'received_at' => $timestamp->copy()->addSeconds(2),
@@ -165,13 +167,15 @@ class RuntimeDemoSeeder extends Seeder
             }
 
             $last = end($timeline);
+            $lastChannelA = $last['state'] === 'NORMAL';
+            $lastChannelB = $last['state'] === 'REVERSE';
 
             TurnoutState::create([
                 'turnout_id' => $turnout->id,
                 'node_id' => $node->id,
                 'state' => $last['state'],
-                'channel_a' => $last['a'],
-                'channel_b' => $last['b'],
+                'channel_a' => $lastChannelA,
+                'channel_b' => $lastChannelB,
                 'source_timestamp' => $base->copy()->addMinutes($last['minutes']),
                 'received_at' => $base->copy()->addMinutes($last['minutes'])->addSeconds(2),
             ]);

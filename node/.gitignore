@@ -1,0 +1,45 @@
+# =============================================================================
+# Python node ignores. Storage + logs have their own per-dir .gitignore that
+# preserves the empty directory while ignoring all runtime contents.
+# =============================================================================
+
+# --- Python bytecode / build artefacts ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# --- Test / coverage / type-check caches ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+
+# --- Editor / IDE (in case node/ is opened standalone) ---
+.vscode/
+.idea/
+
+# --- Secrets: operator copies .env.example → .env per station ---
+.env
+.env.local
+.env.*.local
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
